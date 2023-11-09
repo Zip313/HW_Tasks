@@ -29,9 +29,15 @@ namespace HW_Tasks.Services
             Console.WriteLine($"Время выполнения методом Parallel.ForEach: {timer.ElapsedMilliseconds}ms, результат: {result}");
 
             timer.Restart();
+            result = CalculateSumMultiTask();
+            timer.Stop();
+            Console.WriteLine($"Время выполнения методом Thread: {timer.ElapsedMilliseconds}ms, результат: {result}");
+
+            timer.Restart();
             result = CalculateSumMultiThread();
             timer.Stop();
-            Console.WriteLine($"Время выполнения методом async: {timer.ElapsedMilliseconds}ms, результат: {result}");
+            Console.WriteLine($"Время выполнения методом Task: {timer.ElapsedMilliseconds}ms, результат: {result}");
+
             Console.WriteLine();
         }
 
@@ -81,7 +87,7 @@ namespace HW_Tasks.Services
             return sum;
         }
 
-        public ulong CalculateSumMultiThread()
+        public ulong CalculateSumMultiTask()
         {
             var processorCount = Environment.ProcessorCount; 
             var size = numbers.Count(); 
@@ -103,6 +109,38 @@ namespace HW_Tasks.Services
                 }));
             }
             Task.WaitAll(tasks.ToArray());  
+            
+            return sum;
+        }
+
+        public ulong CalculateSumMultiThread()
+        {
+            var processorCount = Environment.ProcessorCount;
+            var size = numbers.Count();
+            var partSize = size / processorCount;
+            ulong sum = 0;
+            List<Thread> threads = new List<Thread>();
+            object monitor = new object();
+            for (var i = 0; i < processorCount; Interlocked.Increment(ref i))
+            {
+                var currentPartSize = i == processorCount - 1 ? size - (partSize * (i - 1)) : partSize;
+                var currentNumbers = numbers.Skip(i * partSize).Take(currentPartSize);
+                var thread = new Thread(() =>
+                {
+                    lock (monitor)
+                    {
+                        sum += (ulong)(currentNumbers.Sum(x => (uint)x));
+                    }
+                });
+                thread.Start();
+                threads.Add(thread);
+                
+            }
+            
+            foreach (var thread in threads) 
+            {
+                thread.Join();
+            }
             
             return sum;
         }

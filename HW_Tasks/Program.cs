@@ -13,6 +13,8 @@ namespace HW_Tasks
             calculator.Calculate(100000);
             calculator.Calculate(1000000);
             calculator.Calculate(10000000);
+
+            Console.ReadKey();
         }
     }
 }
